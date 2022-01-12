@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if new_connection %}
+        <img src="{{ url_for('static', filename='img/login_success.gif') }}" alt="You are successfully connected!"
+             width="800"
+             class="img-responsive center-block d-block mx-auto">
+
+        <h3 class="text-center">Bienvenue à la maison : tu es maintenant connecté </h3>
+    {% else %}
+        <img src="{{ url_for('static', filename='img/auth_renewed.gif') }}" alt="You are successfully connected!"
+             width="800"
+             class="img-responsive center-block d-block mx-auto">
+
+        <h3 class="text-center">Tu es déjà connecté, gros malin!</h3>
+
+    {% endif %}
+
+    <div class="text-center">
+        <a class="btn btn-primary btn-lg" href="{{ url_for('hello_world') }}"> Return to homepage</a>
+    </div>
+
+{% endblock %}

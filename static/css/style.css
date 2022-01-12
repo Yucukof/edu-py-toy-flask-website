@@ -1,0 +1,46 @@
+/*https://www.w3schools.com/Css/css_font.asp*/
+
+body {
+}
+
+h1 {
+    font-family: "Lucida Handwriting", cursive;
+    color: sienna;
+    font-size: 50px;
+}
+
+image {
+    align-content: center;
+}
+
+p {
+}
+
+th, td {
+    padding: 15px;
+}
+
+.btn-wide {
+    width: 200px;
+    padding: 5px;
+}
+
+.btn-no-hover:hover {
+    background-color: transparent !important;
+    color: #6c757d !important;
+}
+
+.navbar-nav > li {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.padded {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.accordion-body {
+    padding-top: 0;
+    padding-bottom: 0;
+}

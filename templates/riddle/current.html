@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block body %}
+
+    <section>
+        <div class="container">
+            {% if response.value.raw_data is not none %}
+                <img src="{{ url_for('static', filename='img/thinking.gif') }}" alt="This is wrong!" width="400">
+                <h3 class="text-danger">[{{ 'Vrai' if response.value.data else 'Faux' }}] n'est pas la bonne réponse...
+                    Réessaye !<br>
+                    (bon, ça devrait plus être trop dur à deviner, dans un vrai-ou-faux...)</h3>
+            {% endif %}
+            <p>
+        </div>
+
+        <div class="container">
+            <h2>{{ riddle.name }}</h2>
+            <p class="fst-italic fs-3">"{{ riddle.riddle }}"</p>
+        </div>
+
+        <form method="POST" name="response" class="container text-center">
+            {{ response.csrf_token }}  <!-- {{ response.hidden_tag() }}  -->
+            <div class="form-group">
+                <input type="radio" class="btn-check" name="solution" id="success-outlined" value="1"
+                       autocomplete="off">
+                <label class="btn btn-outline-success padded" for="success-outlined">Vrai</label>
+                <input type="radio" class="btn-check" name="solution" id="danger-outlined" value="0"
+                       autocomplete="off">
+                <label class="btn btn-outline-danger padded" for="danger-outlined">Faux</label>
+            </div>
+            <br>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </section>
+
+    {% block clues %}{% endblock %}
+
+{% endblock %}

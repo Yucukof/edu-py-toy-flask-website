@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block script %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script>
+        function update_difficulty() {
+            let output = document.getElementById("difficulty");
+            let input = document.getElementById('difficultyRange').value;
+            output.value = parseInt(input, 10);
+        }
+    </script>
+{% endblock %}
+
+{# https://getbootstrap.com/docs/5.0/forms/overview/ #}
+
+{% block body %}
+
+    {% if riddle is not none %}
+        <div class="container">
+            <h3>Énigme enregistrée !</h3>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="col-2">Nom</th>
+                    <th class="col-4">Énigme</th>
+                    <th class="col-1">Difficulté</th>
+                    <th class="col-1">Catégorie</th>
+                    <th class="col-1">Solution</th>
+                    <th class="col-4">Explication</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="col-2">{{ riddle.name }}</td>
+                    <td class="col-4">{{ riddle.riddle }}</td>
+                    <td class="col-1">{{ riddle.difficulty }}</td>
+                    <td class="col-4">{{ riddle.category }}</td>
+                    <td class="col-1">{{ 'Vrai' if riddle.solution else 'Faux' }}</td>
+                    <td class="col-4">{{ riddle.explanation }}</td>
+                </tr>
+                <tr>
+                    <div class="row">
+                        <td colspan="5">
+                            <div class="accordion" id="clues{{ riddle.id }}">
+                                {% for clue in riddle.clues %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading-{{ riddle.id }}-{{ loop.index }}">
+                                            <button class="accordion-button collapsed" type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#collapse-{{ riddle.id }}-{{ loop.index }}"
+                                                    aria-expanded="false"
+                                                    aria-controls="collapse-{{ riddle.id }}-{{ loop.index }}">
+                                                Indice {{ loop.index }}</button>
+                                        </h2>
+                                        <div id="collapse-{{ riddle.id }}-{{ loop.index }}"
+                                             class="accordion-collapse collapse"
+                                             aria-labelledby="heading-{{ riddle.id }}-{{ loop.index }}"
+                                             data-bs-parent="#clues{{ riddle.id }}">
+                                            <div class="accordion-body">
+                                                <form name="delete_clue" method="GET"
+                                                      action="{{ url_for('riddle.remove_clue',riddle_id=riddle.id,number=loop.index) }}"
+                                                      novalidate>
+                                                    {{ clue_form.csrf_token }}  <!-- {{ clue_form.hidden_tag() }}  -->
+                                                    <table class="container">
+                                                        <tbody>
+                                                        <div class="row">
+                                                            <td class="col-19">
+                                                                <span class="fst-italic align-middle">{{ clue.text }}</span>
+                                                            </td>
+                                                            <td class="col-1">
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </td>
+                                                        </div>
+                                                        </tbody>
+                                                    </table>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingNew{{ riddle.id }}">
+                                        <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#addNew{{ riddle.id }}"
+                                                aria-expanded="false"
+                                                aria-controls="addNew{{ riddle.id }}">
+                                            Ajouter un indice
+                                        </button>
+                                    </h2>
+                                    <div id="addNew{{ riddle.id }}" class="accordion-collapse collapse"
+                                         aria-labelledby="headingNew{{ riddle.id }}"
+                                         data-bs-parent="#clues{{ riddle.id }}">
+                                        <div class="accordion-body">
+                                            <form name="add_clue" method="POST"
+                                                  action="{{ url_for('riddle.add_clue',riddle_id=riddle.id) }}"
+                                                  novalidate>
+                                                {{ clue_form.csrf_token }}  <!-- {{ clue_form.hidden_tag() }}  -->
+
+                                                <table class="container">
+                                                    <tbody>
+                                                    <div class="row">
+                                                        <td class="col-19">
+                                                            <input type="text" id="text"
+                                                                   name="text"
+                                                                   class="form-control{{ ' is-invalid' if clue_form.errors['text'] }}"
+                                                                   placeholder="Balance ton indice">{{ clue_form.text.data if clue_form.text.data }}</input>
+                                                        </td>
+                                                        <td class="col-1">
+                                                            <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-plus-circle"></i>
+                                                            </button>
+                                                        </td>
+                                                    </div>
+                                                    </tbody>
+                                                </table>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </div>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('.new_riddle') }}" class="container" novalidate>
+        {{ form.csrf_token }}  <!-- {{ form.hidden_tag() }}  -->
+
+        <div class="mb-auto">
+            <label for="name" class="form-label lead">Nom</label>
+            <input id="name" name="name" class="form-control{{ ' is-invalid' if form.errors['name'] }}"
+                   placeholder="Donne un nom à ton énigme de fou" type="text"
+                   value="{{ form.name.data if form.name.data }}"
+            />
+            {% if form.errors['name'] %}
+                <div class="invalid-feedback">{{ form.errors['name'][0] }}</div>
+            {% endif %}
+            <br>
+        </div>
+
+        <div class="mb-auto">
+            <label for="riddle" class="form-label lead">Énigme</label><br>
+            <textarea id="riddle" name="riddle" class="form-control{{ ' is-invalid' if form.errors['riddle'] }}"
+                      placeholder="Écris ton énigme quasi indevinable"
+                      rows="3">{{ form.riddle.data if form.riddle.data }}</textarea>
+            {% if form.errors['riddle'] %}
+                <div class="invalid-feedback">{{ form.errors['riddle'][0] }}</div>
+            {% endif %}
+            <br>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                <label for="solution" class="form-label lead col-4">Solution</label><br>
+                <label for="category" class="form-label lead col-4">Catégorie</label><br>
+                <label for="difficulty" class="form-label lead col-4">Difficulté</label><br>
+            </div>
+            <div class="row">
+                <div class="mb-auto col-4">
+                    <input type="radio" class="btn-check" name="solution" id="success-outlined" value="true"
+                           autocomplete="off" {% if form.solution.raw_data is not none and form.solution.data %}
+                           checked {% endif %}>
+                    <label class="btn btn-outline-success{{ ' is-invalid' if form.errors['solution'] }}"
+                           for="success-outlined">Vrai</label>
+                    <input type="radio" class="btn-check" name="solution" id="danger-outlined" value="false"
+                           autocomplete="off" {% if form.solution.raw_data is not none and not form.solution.data %}
+                           checked {% endif %}>
+                    <label class="btn btn-outline-danger{{ ' is-invalid' if form.errors['solution'] }}"
+                           for="danger-outlined">Faux</label>
+                    {% if form.errors['solution'] %}
+                        <div class="invalid-feedback">{{ form.errors['solution'][0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-auto col-4">
+                    {{ form.category(class="form-select",id="category_filter") }}
+                </div>
+                <div class="mb-auto col-4">
+                    <input type="range" id="difficultyRange" name="difficultyRange"
+                           class="form-range{{ ' is-invalid' if form.errors['difficulty'] }}" min="1" max="5"
+                           data-bs-toggle="tooltip" data-bs-placement="top" title="3"
+                           onchange="update_difficulty()">
+                    <input type="number" id="difficulty" name="difficulty" hidden min="1" max="5" value="3"/>
+                    {% if form.errors['difficulty'] %}
+                        <div class="invalid-feedback">{{ form.errors['difficulty'][0] }}</div>
+                    {% endif %}
+                    <br>
+                </div>
+            </div>
+            <div class="row">
+                <p class="text-muted col-4">Donne la solution de ton énigme</p>
+                <p class="text-muted col-4">Donne la catégorie de ton énigme (si tu veux)</p>
+                <p class="text-muted col-4">Dis combien ton énigme est corsée (1
+                    pour le jeu d'enfant, 5 pour l'énigme la plus dure du monde)</p>
+            </div>
+        </div>
+
+        <div class="mb-auto">
+            <label for="explanation" class="form-label lead">Énigme</label><br>
+            <textarea id="explanation" name="explanation"
+                      class="form-control{{ ' is-invalid' if form.errors['explanation'] }}"
+                      placeholder="Indique ici l'explication du pourquoi du comment de ton énigme."
+                      rows="3"></textarea>
+            {% if form.errors['explanation'] %}
+                <div class="invalid-feedback">{{ form.errors['explanation'][0] }}</div>
+            {% endif %}
+            <br>
+        </div>
+
+        <div class="text-center col-md-12">
+            <input type="submit" value="Envoyer" class="btn btn-primary btn-lg">
+        </div>
+    </form>
+
+{% endblock %}

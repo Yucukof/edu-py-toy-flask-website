@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <form method="POST" action="{{ url_for('.new_clue') }}" class="container">
+        {{ form.csrf_token }}  <!-- {{ form.hidden_tag() }}  -->
+
+        <div class="mb-auto">
+            <label for="text" class="form-label lead{{ ' is-invalid' if form.errors['text'] }}">Nom</label>
+            <input id="text" name="text" class="form-control"
+                   placeholder="Décris ton indice" type="text">
+            {% if form.errors['text'] %}
+                <div class="invalid-feedback">{{ form.errors['text'][0] }}</div>
+            {% endif %}
+        </div>
+
+        <div class="text-center col-md-12">
+            <input type="submit" value="Envoyer" class="btn btn-primary btn-lg">
+        </div>
+    </form>
+
+{% endblock %}

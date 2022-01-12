@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <div class="container">
+        <div class="h2">
+            Bienvenue sur le site de l'Énigmatronic.
+        </div>
+        <p class="text-secondary">
+            Sur ce site, vous découvrirez tout un tas de choses.
+        <ul class="list-group">
+            <li class="list-group-item ">
+                <p class="text-secondary fw-bold">Un ensemble d'énigmes plus ou moins tordues, issues du Burger Quizz <i
+                        class="fas fa-hamburger"></i></p>
+                <ul>
+                    <li><a href="{{ url_for('riddle.riddle_random') }}">Une énigme à résoudre aléatoirement</a></li>
+                    <li><a href="{{ url_for('riddle.riddle_success') }}">Une page de félicitations pour les fortiches
+                        qui
+                        résolvent l'énigme avec succès</a> (réussite requise).
+                    </li>
+                    <li><a href="{{ url_for('riddle.list_riddle') }}">Une liste des énigmes disponibles</a> (login
+                        requis).
+                    </li>
+                    <li><a href="{{ url_for('riddle.new_riddle') }}">Une page pour ajouter ses propres énigmes à la
+                        liste
+                    </a> (login requis).
+                    </li>
+                </ul>
+                <br>
+                <p>La liste des énigmes permet de visualiser les énigmes par page de 5 énigmes et de modifier la valeur
+                    de diffulté de ces énigmes.
+                    <br>
+                    Seuls les utilisateurs enregistrés et connectés du site peuvent consulter cette page et les
+                    réponses
+                    sont masquées par défaut. Il suffit de cliquer sur le bouton pour les révéler.</p>
+            </li>
+            <li class="list-group-item">
+                <p class="text-secondary fw-bold">Un système d'utilisateurs relativement simple, par authentification
+                    utilisateur-mot de passe.</p>
+                <ul>
+                    <li>
+                        <i class="fas fa-user-shield fa-lg"></i><span class="fw-bold">Un utilisateur avec les droits d'administrateur</span>
+                        <ul class="table">
+                            <li><span class="fw-bold">Utilisateur  : </span>admin</li>
+                            <li><span class="fw-bold">Mot de passe : </span>admin</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <i class="fas fa-user fa-lg"></i><span class="fw-bold">Un utilisateur lambda</span>
+                        <ul class="table">
+                            <li><span class="fw-bold">Utilisateur  : </span>user</li>
+                            <li><span class="fw-bold">Mot de passe : </span>user</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>Toutes les pages du site ne sont pas protégées : certaines pages sont accessibles aux utilisateurs
+                    non-enregistrés (dits anonymes).
+                </p>
+            </li>
+            <li class="list-group-item">
+                <p class="text-secondary fw-bold">Une base de données SQLite</p>
+                <p>Cette base de données supporte le système d'authentification et la sauvegarde des énigmes, et utilise
+                    SQLAlchemy ORM.</p>
+            </li>
+
+            {% if request.referrer == url_for('riddle.game_2',_external=True) %}
+                <li class="list-group-item">
+                    <p class="text-secondary fw-bold">Remerciements</p>
+                    <div>Le cours d'architecture des sites web et ce projet en particulier sur base de python a été pour
+                        moi une expérience particulière : développeur Java pur jus, rompu aux techniques purement
+                        back-end et avec très peu d'expérience en design HTML, l'utilisation de Python et du framework
+                        Flask a été une occasion de sortir de ma zone de confort et de découvrir une manière de
+                        travailler et d'appréhender les choses tout à fait nouvelle.
+                        <ul>
+                            <li>Apprentissage de Python dans un cadre réel d'utilisation</li>
+                            <li>Découverte du fonctionnement de plusieurs framework et des facilités qu'ils apportent
+                                mais aussi des complexités qu'ils peuvent engendrer lorsqu'on ne le connaît pas.
+                            </li>
+                            <li>Découverte de Bootstrap, qui m'a montré comme il était possible de rapidement arriver à
+                                un résultat visuellement correct sans avoir de compétences en design (je dois bien
+                                avouer que j'ai été surpris par les capacités de bootstrap). En revanche, le HTML de
+                                manière
+                                générale reste un outil compliqué à aborder pour moi : comprendre ce qui pêche dans une
+                                mise en page, sans vraiment maîtriser ce qui se passe "under the hood", c'est parfois un
+                                peu rageant.
+                            </li>
+                        </ul>
+                    </div>
+                    <br>
+                    <div>
+                        En termes de commentaires sur le cours et le TP, je voudrais également adresser un remerciement
+                        à Gonzague pour son travail : les exercices de TP sont excellents ! Ils aident à parcourir toute
+                        la matière en nous donnant des situations de mise en pratique simples. Les objectifs des travaux
+                        sont également très clairs et ça c'est une qualité rare qu'on aimerait voir plus souvent 😃.
+                    </div>
+                    <br>
+                    <div>Au plaisir de vous voir sur Teams le 2 juin, et avec un peu de chance en présentiel à la
+                        remise des diplômes 🤞
+                    </div>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+{% endblock %}

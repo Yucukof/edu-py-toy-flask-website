@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+
+{% block body %}
+    <img src="{{ url_for('static', filename='img/404.gif') }}" alt="Page not found"
+         width="800"
+         class="img-responsive center-block d-block mx-auto">
+
+    <h3 class="text-center">Uh-oh, la page que tu cherches n'existe pas...</h3>
+{% endblock %}

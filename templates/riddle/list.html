@@ -1,0 +1,597 @@
+{% extends 'base.html' %}
+
+{% block script %}
+
+    <script>
+        let currentCategory = undefined
+        let is_admin = '{{ 'true' if current_user.is_admin else 'false' }}'
+        let currentPage = undefined
+        let pageSize = undefined
+        let itemCount = undefined
+    </script>
+    <script>
+
+        function show_only(category) {
+            if (category !== "__None") {
+                currentCategory = category
+            } else {
+                currentCategory = undefined
+            }
+            loadData(currentCategory, currentPage)
+        }
+
+        function loadData(categoryId, pageNumber) {
+            const url = "{{ url_for('.list_riddle_by_category') }}"
+            console.log(url)
+            console.log({category_id: categoryId, page: pageNumber})
+            $.getJSON(url, {category_id: categoryId, page: pageNumber}, process_data, process_data);
+
+            console.log("ready!");
+        }
+
+        function process_data(data) {
+            let json = JSON.parse(data);
+
+            updateContext(json)
+            setFilter()
+            build_riddle_list(json)
+            build_pagination(json)
+            return json
+        }
+
+        function updateContext(pagination) {
+            currentPage = pagination.page
+            pageSize = pagination.per_page
+            itemCount = pagination.total
+        }
+
+        function setFilter() {
+            let select = document.getElementById("category_filter");
+            let option = document.getElementById("category_filter_none");
+            if (option === null) {
+                option = document.createElement("option");
+                option.text = "Aucune catégorie";
+                option.value = "-1";
+                option.id = "category_filter_none"
+                select.appendChild(option)
+            }
+            if (currentCategory !== undefined) {
+                select.value = currentCategory
+            }
+        }
+
+        function delete_riddle(id) {
+            let pageNumber
+            let threshold = ((itemCount - 1) % pageSize) === 0;
+            let min = currentPage === 1
+            if (threshold && !min) {
+                pageNumber = currentPage - 1
+            } else {
+                pageNumber = currentPage
+            }
+            console.log(threshold && !min)
+            $.post({
+                url: "{{ url_for('.delete_riddle') }}",
+                data: {riddle_id: id},
+                success: function () {
+                    loadData(currentCategory, pageNumber)
+                }
+            });
+        }
+
+        function delete_clue(riddle_id, clue_number) {
+            $.get({
+                url: "{{ url_for('.clues_remove') }}",
+                data: {riddle_id: riddle_id, number: clue_number},
+                success: function () {
+                    loadData(currentCategory, currentPage)
+                }
+            })
+        }
+
+        function add_clue(riddle_id, form) {
+            let url = "{{ url_for('.add_clue',riddle_id='riddle_id')}}"
+            url = url.replace("riddle_id", riddle_id)
+            console.log(url)
+            let form_element = $('#' + form)
+            let data = form_element.serialize();
+            $.post({
+                url: url
+                , data: data
+                , success: function () {
+                    loadData(currentCategory, currentPage)
+                }
+            });
+        }
+    </script>
+    <script>
+        function setDifficulty(riddle_id, increment) {
+
+            let form = new FormData()
+            form.append("riddle_id", riddle_id)
+            form.append("increment", increment)
+            $.ajax({
+                url: "{{ url_for('.update_difficulty') }}",
+                data: form,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function (response) {
+                    if (response['success']) {
+                        let label = document.getElementById(riddle_id + "-difficulty")
+                        let value = label.value + increment
+
+                        label.value = value
+                        label.innerText = value
+                    }
+                }
+            });
+        }
+    </script>
+    <script>
+
+        $(document).ready(function () {
+            loadData(undefined, 1);
+        });
+
+    </script>
+    <script>
+        function build_riddle_list(pagination) {
+            $("#riddles").empty()
+
+            let riddles = pagination.items
+
+            let table = document.getElementById("riddles")
+            let thead, th, tbody, tr, td, row, col, button, a, i
+
+            thead = document.createElement("thead")
+            tr = document.createElement("tr")
+
+            th = document.createElement("th")
+            th.classList.add("col-2")
+            th.innerText = "Nom"
+            tr.appendChild(th)
+
+            th = document.createElement("th")
+            th.classList.add("col-2")
+            th.innerText = "Énigme"
+            tr.appendChild(th)
+
+            th = document.createElement("th")
+            th.classList.add("col-1")
+            th.innerText = "Difficulté"
+            tr.appendChild(th)
+
+            th = document.createElement("th")
+            th.classList.add("col-1")
+            th.innerText = "Catégorie"
+            tr.appendChild(th)
+
+            th = document.createElement("th")
+            th.classList.add("col-1")
+            th.innerText = "Solution"
+            tr.appendChild(th)
+
+            if (is_admin) {
+                th = document.createElement("th")
+                th.classList.add("col-1")
+                th.innerText = "User"
+                tr.appendChild(th)
+            }
+
+            th = document.createElement("th")
+            th.classList.add("col-1")
+            tr.appendChild(th)
+
+            thead.appendChild(tr)
+            table.appendChild(thead)
+
+            tbody = document.createElement("tbody")
+            let category
+            {# ADD riddle row #}
+            for (let riddle of riddles) {
+
+                tr = document.createElement("tr")
+                if (riddle.category !== null) {
+                    category = riddle.category
+                } else {
+                    category = "none"
+                }
+                tr.classList.add("selector", category.name + "Selector")
+
+                td = document.createElement("td")
+                td.classList.add("col-1")
+                td.hidden = true
+                td.innerText = riddle.id
+                tr.appendChild(td)
+
+                td = document.createElement("td")
+                td.classList.add("col-2")
+                td.innerText = riddle.name
+                tr.appendChild(td)
+
+                td = document.createElement("td")
+                td.classList.add("col-8")
+                td.innerText = riddle.riddle
+                tr.appendChild(td)
+
+                td = document.createElement("td")
+                td.classList.add("col")
+                row = document.createElement("div")
+                row.classList.add("row")
+                col = document.createElement("div")
+                col.classList.add("col-1")
+                col.id = riddle.id + "-difficulty"
+                col.innerText = riddle.difficulty
+                col.value = riddle.difficulty
+                row.appendChild(col)
+
+                col = document.createElement("div")
+                col.classList.add("col")
+
+                button = document.createElement("button")
+                button.id = riddle.id + "-higher"
+                button.classList.add("btn", "btn-sm")
+                button.innerHTML = '<i class="fas fa-caret-square-up fa-lg"></i>'
+                button.onclick = function () {
+                    setDifficulty(riddle.id, 1)
+                }
+                col.appendChild(button)
+
+                button = document.createElement("button")
+                button.id = riddle.id + "-lower"
+                button.classList.add("btn", "btn-sm")
+                button.innerHTML = '<i class="fas fa-caret-square-down fa-lg"></i>'
+                button.onclick = function () {
+                    setDifficulty(riddle.id, -1)
+                }
+                col.appendChild(button)
+                row.appendChild(col)
+                td.appendChild(row)
+                tr.appendChild(td)
+
+                td = document.createElement("td")
+                td.classList.add("col-1")
+                if (riddle.category != null) {
+                    td.innerText = riddle.category.name
+                }
+                tr.appendChild(td)
+
+                td = document.createElement("td")
+                button = document.createElement("button")
+                button.classList.add("btn", "btn-no-hover", "btn-outline-secondary", "btn-wide")
+                button.style = "display: none"
+                button.id = "solution-" + riddle.id
+                button.value = riddle.id
+                a = document.createElement("a")
+                a.style.fontWeight = "bold"
+                if (riddle.solution === true) {
+                    a.style.color = "green"
+                    a.innerText = "Vrai"
+                } else {
+                    a.style.color = "red"
+                    a.innerText = "Faux"
+                }
+                button.appendChild(a)
+                let br = document.createElement("br")
+                button.appendChild(br)
+                a = document.createElement("a")
+                a.innerText = riddle.explanation
+                button.onclick = function () {
+                    hide_unhide(this.value);
+                }
+                button.appendChild(a)
+                td.appendChild(button)
+                tr.appendChild(td)
+
+                button = document.createElement("button")
+                button.classList.add("btn", "btn-secondary", "btn-wide")
+                button.id = "button-" + riddle.id
+                button.value = riddle.id
+                button.onclick = function () {
+                    hide_unhide(this.value);
+                }
+                button.innerText = "Show"
+                td.appendChild(button)
+
+                if (is_admin) {
+                    td = document.createElement("td")
+                    td.classList.add("col-1")
+                    if (riddle.creator !== null) {
+                        td.innerText = riddle.creator.username
+                    }
+                    tr.appendChild(td)
+                }
+
+                td = document.createElement("td")
+                td.classList.add("col-1")
+                button = document.createElement("button")
+                button.classList.add("btn", "btn-danger")
+                button.value = riddle.id
+                button.onclick = function () {
+                    delete_riddle(this.value);
+                }
+                i = document.createElement("i")
+                i.classList.add("fa", "fa-trash-alt")
+                button.appendChild(i)
+                td.appendChild(button)
+                tr.appendChild(td)
+                tbody.appendChild(tr)
+
+                tr = build_clue_list(riddle)
+                tbody.appendChild(tr)
+
+                table.appendChild(tbody)
+
+            }
+        }
+    </script>
+    <script>
+        function build_clue_list(riddle) {
+            let category
+            if (riddle.category !== null) {
+                category = riddle.category
+            } else {
+                category = "none"
+            }
+
+            let tr = document.createElement("tr")
+            tr.classList.add("selector", category.name + "Selector")
+            let td = document.createElement("td")
+            if (is_admin) {
+                td.colSpan = 9
+            } else {
+                td.colSpan = 8
+            }
+            let accordion = document.createElement("div")
+            accordion.classList.add("accordion")
+            accordion.id = "clues" + riddle.id
+
+            {# Existing clue rows #}
+            for (const [index, clue] of riddle.clues.entries()) {
+                let id = riddle.id + "-" + clue.id
+
+                let accordionItem = document.createElement("div")
+                accordionItem.classList.add("accordion-item")
+                {
+                    let header = document.createElement("h2")
+                    header.classList.add("accordion-header")
+                    header.id = "heading-" + id
+                    {
+                        let button = document.createElement("button")
+                        button.classList.add("accordion-button", "collapsed")
+                        button.type = "button"
+                        button.setAttribute("data-bs-toggle", "collapse")
+                        button.setAttribute("data-bs-target", "#collapse-" + id)
+                        button.setAttribute("aria-expanded", "false")
+                        button.setAttribute("aria-controls", "collapse-" + id)
+                        button.innerText = "Indice " + (index + 1)
+                        header.appendChild(button)
+                    }
+                    accordionItem.appendChild(header)
+                }
+                {
+                    let entry = document.createElement("div")
+                    entry.id = "collapse-" + id
+                    entry.classList.add("accordion-collapse", "collapse")
+                    entry.setAttribute("aria-labelledby", "heading-" + id)
+                    entry.setAttribute("data-bs-parent", "#clues" + riddle.id)
+                    {
+                        let div = document.createElement("div")
+                        div.classList.add("accordion-body")
+
+                        let table = document.createElement("table")
+                        table.classList.add("container")
+                        let tbody = document.createElement("tbody")
+                        {
+                            let tr = document.createElement("tr")
+                            tr.classList.add("row")
+                            {
+                                let td = document.createElement("td")
+                                td.classList.add("col-11")
+                                let span = document.createElement("span")
+                                span.classList.add("fst-italic", "align-middle")
+                                span.innerText = clue.text
+                                td.appendChild(span)
+                                tr.appendChild(td)
+                            }
+                            {
+                                let td = document.createElement("td")
+                                td.classList.add("col-1")
+                                let button = document.createElement("button")
+                                button.classList.add("btn", "btn-danger")
+                                button.type = "submit"
+                                button.onclick = function () {
+                                    delete_clue(riddle.id, (index + 1))
+                                }
+                                let i = document.createElement("i")
+                                i.classList.add("fas", "fa-trash")
+                                button.appendChild(i)
+                                td.appendChild(button)
+                                tr.appendChild(td)
+                            }
+                            tbody.appendChild(tr)
+                        }
+                        table.appendChild(tbody)
+                        div.appendChild(table)
+                        entry.appendChild(div)
+                    }
+                    accordionItem.appendChild(entry)
+                }
+                accordion.appendChild(accordionItem)
+            }
+            {# New clue row #}
+            let accordionItem = document.createElement("div")
+            accordionItem.classList.add("accordion-item")
+            {
+                let header = document.createElement("h2")
+                header.classList.add("accordionHeader")
+                header.id = "headingNew" + riddle.id
+                {
+                    let button = document.createElement("button")
+                    button.classList.add("accordion-button", "collapsed")
+                    button.type = "button"
+                    button.setAttribute("data-bs-toggle", "collapse")
+                    button.setAttribute("data-bs-target", "#addNew-" + riddle.id)
+                    button.setAttribute("aria-expanded", "false")
+                    button.setAttribute("aria-controls", "addNew-" + riddle.id)
+                    button.innerText = "Ajouter un indice"
+                    header.appendChild(button)
+                }
+                accordionItem.appendChild(header)
+            }
+            {
+                let entry = document.createElement("div")
+                entry.classList.add("accordion-collapse", "collapse")
+                entry.id = "addNew-" + riddle.id
+                entry.setAttribute("aria-labelledBy", "headingNew" + riddle.id)
+                entry.setAttribute("data-bs-parent", "#clues" + riddle.id)
+                {
+                    let body = document.createElement("form")
+                    body.classList.add("accordion-body")
+                    body.id = "addNew-" + riddle.id + "-form"
+                    body.name = "add_clue"
+                    body.noValidate = false
+                    {
+                        let table = document.createElement("table")
+                        table.classList.add("container")
+                        let tbody = document.createElement("tbody")
+                        let tr = document.createElement("tr")
+                        tr.innerHTML = '{{ clue_form.csrf_token }}  <!-- {{ clue_form.hidden_tag() }}  -->'
+                        {
+                            let td = document.createElement("td")
+                            td.classList.add("col-11")
+                            let input = document.createElement("input")
+                            input.classList.add("form-control")
+                            input.id = "text" + riddle.id
+                            input.name = "text"
+                            input.type = "text"
+                            input.placeholder = "Balance to indice !"
+                            td.appendChild(input)
+                            tr.appendChild(td)
+                        }
+                        {
+                            let td = document.createElement("td")
+                            td.classList.add("col-1")
+                            let button = document.createElement("button")
+                            button.classList.add("btn", "btn-primary")
+                            button.onclick = function () {
+                                add_clue(riddle.id, body.id)
+                            }
+                            let i = document.createElement("i")
+                            i.classList.add("fas", "fa-plus-circle")
+                            button.appendChild(i)
+                            td.appendChild(button)
+                            tr.appendChild(td)
+                        }
+                        tbody.appendChild(tr)
+                        table.appendChild(tbody)
+                        body.append(table)
+                    }
+                    entry.appendChild(body)
+                }
+                accordionItem.appendChild(entry)
+            }
+            accordion.appendChild(accordionItem)
+
+            td.appendChild(accordion)
+            tr.appendChild(td)
+            return tr
+        }
+    </script>
+    <script>
+        function build_pagination(pagination) {
+
+            $("#paginator").empty()
+
+            let ul = document.getElementById("paginator")
+            let li, a
+
+            {# ADD previous button#}
+            li = document.createElement("li")
+
+            li.classList.add("page-item")
+            if (!pagination.has_prev) {
+                li.classList.add("disabled")
+            }
+            a = document.createElement("a")
+            a.classList.add("page-link")
+            a.innerText = "previous"
+            a.value = pagination.prev_num
+            a.onclick = function () {
+                loadData(currentCategory, this.value);
+            }
+            li.appendChild(a)
+            ul.appendChild(li)
+
+            {# ADD pages buttons #}
+            let pageCount = pagination.pages;
+            let currentPage = pagination.page;
+
+            for (let page = 1; page <= pageCount; page++) {
+                li = document.createElement("li")
+
+                li.classList.add("page-item")
+                if (page === currentPage) {
+                    li.classList.add("active")
+                }
+                a = document.createElement("a")
+                a.classList.add("page-link")
+                a.innerText = page.toString()
+                a.value = page
+                a.onclick = function () {
+                    loadData(currentCategory, this.value);
+                }
+                li.appendChild(a)
+                ul.appendChild(li)
+            }
+
+            {# ADD next button#}
+            li = document.createElement("li")
+            li.classList.add("page-item")
+            if (!pagination.has_next) {
+                li.classList.add("disabled")
+            }
+            a = document.createElement("a")
+            a.classList.add("page-link")
+            a.innerText = "next"
+            a.value = pagination.next_num
+            a.onclick = function () {
+                loadData(currentCategory, this.value);
+            }
+            li.appendChild(a)
+            ul.appendChild(li)
+        }
+
+        function hide_unhide(id) {
+            let solution = document.getElementById('solution-' + id);
+            let button = document.getElementById('button-' + id);
+
+            if (solution.style.display === "none") {
+                solution.style.display = "block";
+                button.style.display = "none"
+            } else {
+                solution.style.display = "none";
+                button.style.display = "block"
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block body %}
+
+    <div class="container">
+        {{ category_form.text(class="form-select",id="category_filter", onchange="show_only(this.options[this.selectedIndex].value)") }}
+    </div>
+
+    <div class="container">
+        <table class="table table-striped" id="riddles">
+        </table>
+    </div>
+    <p>
+
+    <div class="container">
+        <ul class="pagination justify-content-center" id="paginator">
+        </ul>
+    </div>
+{% endblock %}

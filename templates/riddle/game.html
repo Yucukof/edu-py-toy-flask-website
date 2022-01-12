@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block script %}
+    <script>
+
+        let current_riddle_id = 0
+        let streak = Number({{ current_user.player.current_streak if not current_user.is_anonymous else 0 }})
+        let failed = Number({{ current_user.player.failed if not current_user.is_anonymous else 0 }})
+        let streak_interrupted_message = "Too bad, this was not the right answer!" + "\nCurrent streak: "
+
+        let drawButton = document.getElementById("drawButton");
+        let response_form = document.getElementById("responseForm");
+        let player = undefined
+
+    </script>
+
+    <script>
+        function loadPage() {
+            loadRandomRiddle()
+        }
+        function loadRandomRiddle() {
+            const url = "{{ url_for('.fetch_json_riddle_by_random') }}"
+            $.getJSON(url, {'current_id': current_riddle_id}, process_data);
+        }
+    </script>
+    <script>
+        function loadPlayerInfo() {
+            const url = "{{ url_for('.fetch_json_player') }}"
+            $.getJSON(url, {}, function (data) {
+                player = data
+                streak = data['current_streak']
+                failed = data['failed']
+
+                let streak_display = document.getElementById("streak_display")
+                streak_display.innerText = String(streak)
+                let failed_display = document.getElementById("failed_display")
+                failed_display.innerText = String(failed)
+            });
+        }
+    </script>
+    <script>
+        function claim_reward() {
+            if (streak === 3) {
+                alert("Congratulations: You've won this time")
+            }
+
+            let btn_group = document.getElementById("buttonGroup")
+
+            if (document.getElementById("rewardBtn") === null) {
+                let a = document.createElement("a")
+                a.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;"
+                btn_group.appendChild(a)
+
+                let btn_reward = document.createElement("button")
+                btn_reward.id = "rewardBtn"
+                btn_reward.classList.add("btn", "btn-secondary", "btn-lg")
+                btn_reward.innerHTML = '<i class="fas fa-gift"></i> Claim Reward'
+                btn_reward.onclick = function () {
+                    window.location.replace("{{ url_for('.game_2') }}");
+                }
+                btn_group.appendChild(btn_reward)
+            }
+        }
+    </script>
+
+    <script>
+        function init_skeleton() {
+
+            let skeleton = document.createElement("div")
+            skeleton.id = "skeleton"
+            skeleton.classList.add("container")
+
+            let row = document.createElement("div")
+            row.classList.add("row")
+            skeleton.appendChild(row)
+
+            let riddle = document.createElement("div")
+            riddle.id = "riddle"
+            riddle.classList.add("col-8")
+            row.appendChild(riddle)
+
+            let scoreboard = document.createElement("div")
+            scoreboard.id = "scoreboard"
+            scoreboard.classList.add("col-4")
+            row.appendChild(scoreboard)
+
+            let header, body, tr, td
+            let score_table = document.createElement("table")
+            {
+                header = document.createElement("thead")
+                score_table.appendChild(header)
+                tr = document.createElement("tr")
+                header.appendChild(tr)
+                td = document.createElement("td")
+                td.innerHTML = '<i class="fas fa-check-circle fa-lg" style="color:green"></i>'
+                tr.appendChild(td)
+                td = document.createElement("td")
+                td.innerHTML = '<i class="fas fa-times-circle fa-lg" style="color:red"></i>'
+                tr.appendChild(td)
+            }
+            {
+                body = document.createElement("tbody")
+                score_table.appendChild(body)
+                tr = document.createElement("tr")
+                body.appendChild(tr)
+                td = document.createElement("td")
+                td.id = "streak_display"
+                tr.appendChild(td)
+                td = document.createElement("td")
+                td.id = "failed_display"
+                tr.appendChild(td)
+            }
+
+            scoreboard.appendChild(score_table)
+
+            let button_container = document.getElementById("buttonContainer")
+            button_container.parentElement.insertBefore(skeleton, button_container.previousElementSibling)
+        }
+    </script>
+
+    <script>
+        function handleSolutionResponse(approved) {
+
+            if (approved) {
+                resolution = true
+                streak += 1
+                drawButton.innerHTML = '<i class="fas fa-dice"></i> Well Played! Care for another round?'
+            } else {
+                alert(streak_interrupted_message + streak)
+                resolution = true
+                streak = 0
+                failed += 1
+                drawButton.innerHTML = '<i class="fas fa-dice"></i> Quitters are losers, will you draw again?'
+            }
+            drawButton.classList.remove("btn-warning")
+            drawButton.classList.add("btn-primary")
+            drawButton.disabled = null
+
+            let streak_display = document.getElementById("streak_display")
+            streak_display.innerText = String(streak)
+            let failed_display = document.getElementById("failed_display")
+            failed_display.innerText = String(failed)
+
+            if (streak >= 3) {
+                claim_reward()
+            }
+        }
+
+        function submitSolution(solution) {
+
+            drawButton.disabled = "disabled"
+            response_form.elements['value'].value = !!solution;
+
+            let form = new FormData(response_form)
+            $.ajax({
+                url: "{{ url_for('.submit_response') }}",
+                data: form,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function (data) {
+                    handleSolutionResponse(data);
+                }
+            });
+        }
+    </script>
+
+    <script>
+        function process_data(data) {
+
+            loadPlayerInfo()
+
+            if (document.getElementById("skeleton") === null) {
+                init_skeleton()
+            }
+
+            if (data['id'] === undefined) {
+                alert("This website is still under construction")
+                window.location.replace("{{ url_for('info_page') }}");
+                return
+            } else {
+                response_form.elements['id'].value = Number(data['id'])
+            }
+
+            current_riddle_id = data['id']
+
+            let riddle = document.getElementById("riddle")
+            let previous_riddle = document.getElementById('riddle-content')
+            if (previous_riddle !== null) {
+                previous_riddle.remove()
+            }
+            let riddle_content = document.createElement("blockquote")
+            riddle_content.id = "riddle-content"
+            riddle.appendChild(riddle_content)
+            {
+                let p = document.createElement("p")
+                p.id = "riddle-text"
+                p.innerText = data["riddle"]
+                p.classList.add("fst-italic", "h5")
+
+                riddle_content.appendChild(p)
+
+                if (data['category']) {
+                    let footer = document.createElement("blockquote-footer")
+                    footer.id = "riddle-footer"
+                    footer.classList.add("blockquote-footer")
+                    footer.innerText = data['category']['name']
+
+                    riddle_content.appendChild(footer)
+                }
+            }
+
+            riddle_content.appendChild(document.createElement("br"))
+
+            let button_true = document.getElementById("button_true");
+            let button_false = document.getElementById("button_false");
+
+            if (button_true === null) {
+                let div = document.createElement("div")
+                div.classList.add("container", "btn-group", "btn-group-justified")
+                {
+                    button_true = document.createElement("button")
+                    button_true.id = "button_true"
+                    button_true.innerText = "Vrai"
+                    button_true.classList.add("btn", "btn-wide", "btn-outline-success")
+                    button_true.onclick = function () {
+                        button_true.classList.add("active")
+                        button_true.onclick = undefined
+                        button_false.onclick = undefined
+
+                        drawButton.classList.remove("btn-warning")
+                        drawButton.innerHTML = '<i class="fas fa-dice"></i> Again!'
+
+                        submitSolution(true);
+                    }
+
+                    div.appendChild(button_true)
+                }
+                let a = document.createElement("a")
+                a.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;"
+                div.appendChild(a)
+                {
+                    button_false = document.createElement("button")
+                    button_false.id = "button_false"
+                    button_false.innerText = "Faux"
+                    button_false.classList.add("btn", "btn-wide", "btn-outline-danger")
+                    button_false.onclick = function () {
+                        button_false.classList.add("active")
+                        button_true.onclick = undefined
+                        button_false.onclick = undefined
+
+                        drawButton.innerHTML = '<i class="fas fa-dice"></i> Again!'
+
+                        submitSolution(false);
+                    }
+                    div.appendChild(button_false)
+                }
+
+                riddle_content.appendChild(div)
+            } else {
+                button_true.classList.remove("active")
+                button_false.classList.remove("active")
+            }
+
+            let drawButton = document.getElementById("drawButton")
+            drawButton.classList.remove("btn-primary")
+            drawButton.classList.add("btn-warning")
+            drawButton.innerHTML = '<i class="fas fa-dice"></i> Too damn hard, gimme something else'
+
+        }
+
+    </script>
+{% endblock %}
+
+{% block body %}
+
+    <br>
+    <div class="container" id="buttonContainer">
+        <div class="row text-center">
+            <div class="btn-group btn-group-justified" id="buttonGroup">
+                <button class="btn btn-lg btn-primary" id="drawButton" onclick="loadPage()"><i
+                        class="fas fa-dice"></i> Draw me an
+                    riddle like one of your French devinettes!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden">
+        <form name="responseForm" id="responseForm"
+              action="{{ url_for('.submit_response') }}" method="post">
+            {{ response_form.csrf_token }}  <!-- {{ response_form.hidden_tag() }}  -->
+            {{ response_form.id(id="responseId",type="hidden") }}
+            {{ response_form.value(id="responseValue",type="hidden") }}
+        </form>
+    </div>
+{% endblock %}

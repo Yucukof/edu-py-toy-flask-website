@@ -1,0 +1,26 @@
+<head>
+    <style>
+        body {
+            background-color: black;
+        }
+    </style>
+    <style>
+        .img-container {
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+<div class="img-container verticalCenter">
+    <img src="{{ url_for('static',filename='img/play.gif') }}" alt="Congratulations" width="800"
+         class="img-responsive center-block d-block mx-auto">
+</div>
+</body>
+
+<script>
+    document.body.addEventListener('click', function () {
+        alert("Thank you for playing with us and see you soon!")
+        window.location.replace('{{ url_for("hello_world") }}');
+    }, true)
+</script>

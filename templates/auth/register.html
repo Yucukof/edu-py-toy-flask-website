@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation">
+            {{ form.csrf_token }}  <!-- {{ form.hidden_tag() }}  -->
+
+            <div class="form-group">
+                <label for="username" class="form-label">Nom d'utilisateur</label>
+                <input class="form-control{{ ' is-invalid' if form.errors['username'] }}" name="username" id="username" type="text"
+                       maxlength="80" {{ 'value=' + form.username.data if form.username.data }}
+                       placeholder="Choisis un nom d'utilisateur">
+                {% if form.errors['username'] %}
+                    <div class="invalid-feedback">{{ form.errors['username'][0] }}</div>
+                {% else %}
+                    <div class="valid-feedback"></div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Mot de passe</label>
+                <input class="form-control{{ ' is-invalid' if form.errors['password'] }}" name="password" id="password" type="password" maxlength="250"
+                       placeholder="Choisis un mot de passe">
+                {% if form.errors['password'] %}
+                    <div class="invalid-feedback">{{ form.errors['password'][0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Confirmation</label>
+                <input class="form-control{{ ' is-invalid' if form.errors['confirm'] }}" name="confirm" id="confirm" type="password" maxlength="250"
+                       placeholder="Confirme ton mot de passe">
+                {% if form.errors['confirm'] %}
+                    <div class="invalid-feedback">{{ form.errors['confirm'][0] }}</div>
+                {% else %}
+                    <div class="valid-feedback">
+                    </div>
+                {% endif %}
+            </div>
+            <br>
+            <div class="form-group">
+                <button type="submit" name="submit" class="btn btn-primary">Register</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

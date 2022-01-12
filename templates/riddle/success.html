@@ -1,0 +1,18 @@
+{% extends 'riddle/new.html' %}
+
+{% block content %}
+    <header class="container">
+        <img src="{{ url_for('static', filename='img/success.gif') }}" alt="You made it, yay!" width="800"
+             class="img-responsive center-block d-block mx-auto">
+
+        <h3 class="text-center">Félicitations, tu as trouvé la bonne réponse !</h3>
+
+        {% if resolved_riddle is not none and resolved_riddle.explanation is not none %}
+            <p class="container text-secondary"><i>{{ resolved_riddle.explanation }}</i></p>
+        {% endif %}
+
+        <p>Pour te récompenser, je vais te donner accès à ma magic box. <br>
+            Mais n'oublie pas : un grand pouvoir implique de grandes responsabilités !</p>
+        <p>Tu veux maintenant ajouter tes propres énigmes:</p>
+    </header>
+{% endblock %}
